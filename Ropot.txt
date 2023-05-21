@@ -1,0 +1,70 @@
+//library of Servo motor 
+#include <Servo.h> 
+// connection of ultrasonic with Arduino
+#define trig 9
+#define echo 10 
+// connection led with Arduino
+#define led1 3
+#define led2 4
+#define led3 5
+// three object of servo motor
+Servo Pepsi; 
+Servo water;
+Servo juice;
+long duration; //variable to save the time of ultrasonic waves
+int distance; //variable to save the distance
+char reading; // variable to receive the value from Bluetooth
+void setup() {
+Serial.begin(9600);  
+pinMode(trig,OUTPUT);
+pinMode(echo,INPUT);
+// connection of three servo motor
+Pepsi.attach(8);
+water.attach(7);
+juice.attach(6);
+}
+
+//the function of ultrasonic to calculate the distance
+void ultrasonic() {
+digitalWrite(trig, LOW); 
+delayMicroseconds(2);  
+digitalWrite(trig, HIGH);  
+delayMicroseconds(10);  
+digitalWrite(trig, LOW);
+duration = pulseIn(echo, HIGH);
+distance = (duration/2) * 0.0343; 
+}
+
+
+void loop() {
+  // in short distance turn on led mean there is some one
+  ultrasonic();
+  if (distance < 20)
+  { 
+    digitalWrite(led1,HIGH);
+    digitalWrite(led2,HIGH);
+    digitalWrite(led3,HIGH);
+    }
+  else
+  { 
+    digitalWrite (led1,LOW);
+    digitalWrite(led2,LOW);
+    digitalWrite(led3,LOW);
+   }
+   // if receive value from bluetooth the servo move  
+  if (Serial.available()>0)
+  {
+   reading = Serial.read();
+   if (reading == 'a')
+   Pepsi.write(90);
+   else if (reading=='b')
+   water.write(90);
+   else if(reading=='c')
+   juice.write(90);
+  }
+  //the servo will back to normal position
+  delay(5000);
+  Pepsi.write(0);
+  water.write(0);
+  juice.write(0);
+}

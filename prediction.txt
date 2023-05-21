@@ -1,0 +1,135 @@
+# Importing Basic libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Importing time series specific libraries
+import statsmodels.api as sm
+from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.graphics.tsaplots import plot_pacf
+from statsmodels.tsa.stattools import adfuller
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.ar_model import AR
+from statsmodels.tsa.arima.model import ARIMA
+import pmdarima
+from pmdarima import auto_arima
+from statsmodels.tsa.statespace import sarimax
+import prophet
+from prophet import Prophet
+
+# Miscellaneous libararies
+import warnings
+
+warnings.filterwarnings('ignore')
+from math import sqrt
+from random import random
+
+# Libaraies for evaluation of model
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, median_absolute_error, mean_squared_log_error
+from statsmodels.tsa.arima.model import ARIMAResults
+
+#Importing Data
+df = pd.read_csv('Test_Dat.csv', names=['Day', 'Level'], header=0)
+#print(df)
+
+# Data Preprocessing and Visualization
+# Converting year column to datetime format
+df['Day'] = pd.to_datetime(df['Day'])
+y = df.set_index('Day')
+y.index
+#print (y.index)
+#print (y)
+
+# Null values check
+y.isnull().sum()
+#print(y.isnull().sum())
+
+# Time Series plot
+#plt.figure(figsize=(15, 6))
+#plt.plot(y, linewidth=4)
+#plt.xlabel('Month')
+#plt.ylabel('No. of air passengers')
+#plt.show()
+
+# Rolling Mean & Rolling Standard Deviation
+rolmean = y.rolling(window=12).mean()
+rolstd = y.rolling(window=12).std()
+
+# Log Transformation
+ts_log = np.log(y)
+#plt.plot(ts_log)
+#print(ts_log)
+
+mov_avg = ts_log.rolling(window=12).mean()
+ts_log_smu = ts_log - mov_avg
+#print(ts_log_smu)
+
+# Removing NA values from differenced TS
+ts_log_smu = ts_log_smu.dropna()
+#print(ts_log_smu)
+
+# Differencing : on log transformed TS we will use differncing technique
+ts_log_diff = ts_log - ts_log.shift(periods=1)  # first differencing
+#print(ts_log_diff)
+
+# dropping NA values from differenced TS
+ts_log_diff = ts_log_diff.dropna()
+#print(ts_log_diff)
+
+# Differencing of order 2 on log transformed TS
+ts_log_diff2 = ts_log - ts_log.shift(periods=2)
+#print(ts_log_diff2)
+
+# Dropping NA values
+ts_log_diff2 = ts_log_diff2.dropna()
+#print(ts_log_diff2)
+
+# Seasonal Differencing
+ts_log_seasonal_diff = ts_log - ts_log.shift(periods=12)
+#print (ts_log_seasonal_diff)
+
+# Dropping NA values
+ts_log_seasonal_diff = ts_log_seasonal_diff.dropna()
+#print(ts_log_seasonal_diff)
+
+# Splitting TS data into train and test set for model training and testing
+train_ts = ts_log.iloc[0:121, ]
+test_ts = ts_log.iloc[121:, ]
+
+# Model 1 : ARIMA(3,2,2)
+#model1 = ARIMA(train_ts, order=(3, 2, 2))
+#results1 = model1.fit()
+#results1.summary()
+#print(results1.summary())
+
+#predictions1 = results1.forecast(steps=len(test_ts))
+
+#plt.figure(figsize=(15, 6))
+#plt.plot(ts_log, color='green', label='Log Transformed Original data')
+#plt.plot(results1.fittedvalues,
+#color='blue',
+#label='Predicted values for train dataset')
+#plt.plot(predictions1,
+#color='orange',
+#label='Predicted values for test dataset')
+#plt.xlabel('Month')
+#plt.ylabel('Log of no. of passengers')
+#plt.title('ARIMA(3,2,2) model qualitative performance')
+#plt.legend(loc='best')
+#plt.show()
+
+model2 = ARIMA(train_ts, order = (3,2,2), seasonal_order=(0,1,0,12))
+results2 = model2.fit()
+predictions2 = results2.forecast(steps = len(test_ts))
+
+plt.figure(figsize = (15,6))
+plt.plot(ts_log, color = 'green', label = 'Log Transformed Original data')
+plt.plot(results2.fittedvalues, color = 'blue', label = 'Predicted values for train dataset')
+plt.plot(predictions2, color = 'orange', label = 'Predicted values for test dataset')
+plt.xlabel('Month')
+plt.ylabel('Log of no. of passengers')
+plt.title('ARIMA(3,2,2)(0,1,0)[12] qualitative performance')
+plt.legend(loc = 'best')
+plt.show()
+
